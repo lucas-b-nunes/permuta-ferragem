@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Permuta Ferragem 70/30</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: ficha técnica de aço. Barra de título, abas fixas, tabelas editáveis em painéis, resultados em blocos de números. */
+:root{
+  --bg:#EDF0F2; --surface:#FFFFFF; --line:#D3D9DE; --ink:#13202A; --muted:#566673;
+  --accent:#0E5A6B; --accent-ink:#FFFFFF; --accent-soft:#DCEBEE;
+  --warn:#9A5B00; --warn-soft:#F8EBD2; --good:#1E6B3A; --bad:#A3321F;
+  --f-display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,sans-serif;
+  --f-data:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D151B; --surface:#152028; --line:#27363F; --ink:#E6ECF0; --muted:#93A4AF;
+  --accent:#5FB6C8; --accent-ink:#06222A; --accent-soft:#16333B;
+  --warn:#E5A94B; --warn-soft:#2E2412; --good:#6CC48A; --bad:#EE8A76; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D151B; --surface:#152028; --line:#27363F; --ink:#E6ECF0; --muted:#93A4AF;
+  --accent:#5FB6C8; --accent-ink:#06222A; --accent-soft:#16333B;
+  --warn:#E5A94B; --warn-soft:#2E2412; --good:#6CC48A; --bad:#EE8A76; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 56px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;margin:0;text-wrap:balance}
+.num{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.label{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.muted{color:var(--muted);font-size:13px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header{padding-block:28px 18px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:end;justify-content:space-between}
+h1{font-size:clamp(34px,6vw,52px);line-height:1;font-weight:700}
+header p{margin:6px 0 0;color:var(--muted);max-width:56ch}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-family:var(--f-data);font-size:12px;border:1px solid var(--line);padding:5px 10px;color:var(--muted);background:var(--surface)}
+.tag.ok{color:var(--good)} .tag.bad{color:var(--bad)}
+
+.btn{font:600 13px var(--f-body);background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);padding:7px 12px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.danger{background:transparent;color:var(--bad);border-color:var(--line)}
+.btn.danger.arm{background:var(--bad);color:#fff;border-color:var(--bad)}
+.x{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:4px 8px}
+.x:hover{color:var(--bad)}
+
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;margin-bottom:24px}
+nav button{font:600 20px/1 var(--f-display);letter-spacing:.02em;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:12px 14px 9px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav button:hover{color:var(--ink)}
+
+section[hidden]{display:none}
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.kpi{background:var(--surface);border:1px solid var(--line);padding:16px 18px;min-width:0}
+.kpi .v{font:700 clamp(28px,4vw,38px)/1.05 var(--f-display);margin-top:6px;overflow-wrap:anywhere}
+.kpi .s{font-size:13px;color:var(--muted);margin-top:4px}
+.kpi.main{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.kpi.main .label,.kpi.main .s{color:inherit;opacity:.85}
+.kpi.pay .v{color:var(--bad)} .kpi.get .v{color:var(--good)}
+
+.panel{background:var(--surface);border:1px solid var(--line);padding:18px;min-width:0}
+.panel h2{font-size:26px;margin-bottom:12px}
+.two{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font:500 12px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+tfoot td{font-weight:600;border-bottom:0;border-top:2px solid var(--ink)}
+tr.off td{color:var(--muted)}
+.pill{font:500 11px var(--f-data);letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border:1px solid var(--line);color:var(--muted)}
+.pill.on{color:var(--good);border-color:var(--good)}
+
+.in{font:14px var(--f-data);font-variant-numeric:tabular-nums;background:var(--bg);color:var(--ink);border:1px solid var(--line);padding:6px 8px;width:100%;min-width:0;text-align:right;border-radius:0}
+.in.l{text-align:left;font-family:var(--f-body)}
+.in.ov{border-color:var(--warn);background:var(--warn-soft)}
+select.in{text-align:left;font-family:var(--f-body)}
+table.ed td:nth-child(1) .in{min-width:130px}
+table.ed td:nth-child(n+2) .in{min-width:92px}
+table.ed td:last-child{width:1%}
+
+.obra-head{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:14px}
+.fld{display:grid;gap:4px;min-width:0}
+.fld.grow{flex:1 1 200px}
+.fld .in{min-width:110px}
+.chkl{display:flex;gap:8px;align-items:center;font-size:14px;padding-bottom:7px;cursor:pointer}
+.chkl input,.chk input,.apts-in input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.row-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+.split{display:flex;height:34px;border:1px solid var(--line);margin:10px 0 8px;background:var(--accent-soft)}
+.split div{display:flex;align-items:center;padding-left:10px;font:600 15px var(--f-display);letter-spacing:.03em;white-space:nowrap;overflow:hidden;background:var(--accent);color:var(--accent-ink)}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:110px 1fr 56px;gap:10px;align-items:center;font-size:13px}
+.bar .t{height:14px;background:var(--bg);border:1px solid var(--line)}
+.bar .t i{display:block;height:100%;background:var(--accent)}
+.bar b{font:500 13px var(--f-data);text-align:right}
+.note{background:var(--warn-soft);border-left:4px solid var(--warn);padding:12px 14px;font-size:14px}
+.note b{color:var(--warn)}
+
+.sim{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}
+@media (max-width:760px){.sim{grid-template-columns:minmax(0,1fr)}}
+.ctl{display:grid;gap:6px;margin-bottom:18px}
+.ctl .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ctl .in{width:96px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.res .r{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.res .r span:last-child{font-family:var(--f-data);font-variant-numeric:tabular-nums;text-align:right}
+.res .r.big{border-bottom:2px solid var(--ink);padding:14px 0}
+.res .r.big span:last-child{font:700 30px var(--f-display)}
+.pos{color:var(--bad)} .neg{color:var(--good)}
+
+.cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.card{background:var(--surface);border:1px solid var(--line);padding:16px;min-width:0}
+.card h3{font-size:22px;margin-bottom:6px}
+.card p{margin:0;font-size:14px}
+.card .say{margin-top:8px;padding:10px 12px;background:var(--bg);border-left:3px solid var(--accent);font-size:14px}
+.topic{margin-top:28px}
+.topic h2{font-size:28px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:4px}
+.chk{list-style:none;margin:0;padding:0}
+.chk li{border-bottom:1px solid var(--line);display:flex;align-items:flex-start}
+.chk label{display:flex;gap:12px;padding:12px 2px;cursor:pointer;align-items:flex-start;flex:1;min-width:0}
+.chk input{margin-top:4px;flex:none}
+.chk input:checked + span{color:var(--muted);text-decoration:line-through}
+.chk small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.chk input:checked + span small{text-decoration:none}
+textarea.in{text-align:left;font-family:var(--f-body);min-height:130px;resize:vertical;line-height:1.5}
+.add{display:flex;gap:8px;margin-top:12px}
+@media (prefers-reduced-motion:no-preference){nav button{transition:color .15s,border-color .15s}}
+</style>
+</head><body>
+
+<div class="wrap">
+<header>
+  <div>
+    <div class="label" id="h-sub"></div>
+    <h1 id="h-title">Permuta Ferragem</h1>
+    <p>Edite qualquer valor. Tudo recalcula na hora e fica salvo.</p>
+  </div>
+  <div class="tools">
+    <span class="tag" id="status">Carregando…</span>
+    <button class="btn ghost" data-act="copy">Copiar resumo</button>
+  </div>
+</header>
+<textarea class="in" id="copybox" hidden readonly style="margin-bottom:16px" aria-label="Resumo para copiar"></textarea>
+
+<nav role="tablist" aria-label="Seções">
+  <button role="tab" data-tab="resumo">Resumo</button>
+  <button role="tab" data-tab="ferragem">Ferragem</button>
+  <button role="tab" data-tab="imoveis">Imóveis</button>
+  <button role="tab" data-tab="cronograma">Cronograma</button>
+  <button role="tab" data-tab="simulador">Simulador</button>
+  <button role="tab" data-tab="roteiro">Roteiro</button>
+</nav>
+
+<!-- RESUMO -->
+<section id="resumo" role="tabpanel">
+  <div class="grid kpis" id="r-kpis"></div>
+  <div class="panel" style="margin-top:16px"><h2>Quanto os imóveis cobrem</h2><div id="r-split"></div></div>
+  <div class="grid two" style="margin-top:16px">
+    <div class="panel"><h2>Obras</h2><div class="scroll" id="r-obras"></div></div>
+    <div class="panel"><h2>Imóveis</h2><div class="scroll" id="r-apts"></div></div>
+  </div>
+  <div class="panel" style="margin-top:16px"><h2>Onde está o dinheiro, por bitola</h2><div class="bars" id="r-bars"></div></div>
+  <div id="r-alerts" style="margin-top:16px"></div>
+</section>
+
+<!-- FERRAGEM -->
+<section id="ferragem" role="tabpanel" hidden>
+  <div class="grid" id="f-obras"></div>
+  <div class="row-actions"><button class="btn" data-act="addObra">+ Adicionar obra</button></div>
+  <p class="muted" style="margin-top:12px">Altere barras ou valor unitário e o total recalcula. Se digitar direto no total, ele fica destacado e passa a valer no lugar da conta. Os totais do PDF já vêm assim. "Recalcular totais" volta tudo para barras × unitário.</p>
+</section>
+
+<!-- IMÓVEIS -->
+<section id="imoveis" role="tabpanel" hidden>
+  <div class="panel">
+    <h2>Imóveis da permuta</h2>
+    <div class="scroll"><table class="ed"><thead><tr><th>Imóvel</th><th>Onde fica</th><th class="num">Valor</th><th>Na permuta</th><th></th></tr></thead><tbody id="i-rows"></tbody>
+    <tfoot><tr><td>Total na permuta</td><td></td><td class="num" data-o="aptSum"></td><td></td><td></td></tr></tfoot></table></div>
+    <div class="row-actions"><button class="btn" data-act="addApt">+ Adicionar imóvel</button></div>
+    <p class="muted" style="margin-top:12px">Desmarque "Na permuta" para tirar um imóvel da conta sem apagar. Os valores do PDF para o Urban continuam aqui, desmarcados.</p>
+  </div>
+</section>
+
+<!-- CRONOGRAMA -->
+<section id="cronograma" role="tabpanel" hidden>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="obra-head" style="margin-bottom:0">
+      <label class="fld"><span class="label">Como o ferro sai ao longo da obra</span>
+        <select class="in l" data-k="p.perfil" data-t="s"><option value="linear">Parelho, o mesmo valor todo mês</option><option value="inicio">Mais no começo, menos no fim</option></select></label>
+    </div>
+    <p class="muted" style="margin:10px 0 0">Obra de verdade concentra o ferro na fundação e na estrutura. O perfil "mais no começo" mostra isso. Início e duração de cada obra mudam na aba Ferragem.</p>
+  </div>
+  <div class="grid kpis" id="c-kpis"></div>
+  <div class="panel" style="margin-top:16px"><h2>Mês a mês</h2><div class="scroll" id="c-table" style="max-height:560px;overflow-y:auto"></div></div>
+</section>
+
+<!-- SIMULADOR -->
+<section id="simulador" role="tabpanel" hidden>
+  <div class="grid sim">
+    <div class="panel">
+      <h2>Termos da permuta</h2>
+      <div id="s-ctl"></div>
+    </div>
+    <div class="panel">
+      <h2>Resultado</h2>
+      <div class="res" id="s-res"></div>
+      <div class="split" style="margin-top:16px"><div id="s-cov" style="width:0">Cobertura</div></div>
+      <p class="muted" style="margin:0">Os imóveis e as obras incluídos vêm das abas Imóveis e Ferragem.</p>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h2>E se o aço mudar de preço até a entrega?</h2>
+    <div class="ctl" style="max-width:520px">
+      <div class="row"><label for="v-vari" class="label">Variação do aço</label><input class="in" id="v-vari" inputmode="decimal" data-k="p.vari" data-t="n" data-d="1" data-f="0" data-dd="1"></div>
+      <input type="range" min="-30" max="60" step="1" data-k="p.vari" data-t="n" data-d="1" data-f="0" aria-label="Variação do aço em porcentagem">
+    </div>
+    <div class="scroll" id="s-aco"></div>
+  </div>
+</section>
+
+<!-- ROTEIRO -->
+<section id="roteiro" role="tabpanel" hidden>
+  <h2 style="font-size:28px;margin-bottom:12px">O que dizer na reunião</h2>
+  <div class="grid cards" id="z-pos"></div>
+  <div id="topics"></div>
+  <div class="topic">
+    <h2>Minhas perguntas</h2>
+    <ul class="chk" id="custom"></ul>
+    <div class="add"><input class="in l" id="newq" placeholder="Escreva uma pergunta e aperte Enter" aria-label="Nova pergunta"><button class="btn" data-act="addCustom">Adicionar</button></div>
+  </div>
+  <div class="topic">
+    <h2>Anotações da reunião</h2>
+    <textarea class="in" id="notes" data-k="notes" data-t="s" placeholder="O que ele respondeu, prazos, números combinados…" aria-label="Anotações"></textarea>
+  </div>
+  <p class="muted" style="margin-top:24px">Cláusulas, garantias e impostos pedem revisão de advogado e contador antes de assinar.</p>
+  <div class="row-actions" style="margin-top:20px"><button class="btn danger" data-act="reset" data-confirm>Restaurar valores do PDF</button></div>
+</section>
+</div>
+
+<script>
+const LS='permuta-ferragem-v2';
+const $=id=>document.getElementById(id);
+const sum=a=>a.reduce((s,x)=>s+(+x||0),0);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,8);
+const nf=(mx,mn=mx)=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:mn,maximumFractionDigits:mx});
+const N0=nf(0),N1=nf(1),N2=nf(2),P1=nf(1,0);
+const BRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const brl=v=>BRL.format(v).replace(/ /g,' ');
+const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+/* ---------- dados do PDF ---------- */
+const BIT=[['5 mm',1.848],['1/4 · 6 mm',2.94],['5/6 · 8 mm',4.74],['3/8 · 10 mm',7.404],['1/2 · 12 mm',11.556],['5/8 · 16 mm',18.936],['3/4 · 20 mm',29.592]];
+const UN=[12.95,18.5,27.8,43.5,66.55,109,170];
+const URB=[[25107,325135.65],[9088,168128],[4700,130660],[8148,354438],[3590,238914.5],[4185,456165],[776,131920]];
+const DIV=[[8369,108378.55],[3029,56042.67],[1567,43553.33],[2716,118146],[1197,79638.17],[1395,152055],[259,43973.33]];
+const items=rows=>rows.map((r,i)=>({nome:BIT[i][0],qtd:r[0],unit:UN[i],kg:BIT[i][1],total:r[1]}));
+const DEF=()=>({
+  v:2,
+  obras:[
+    {id:'divino',nome:'Divino',inicio:'2028-05',meses:18,on:true,itens:items(DIV)},
+    {id:'urban',nome:'Urban',inicio:'2030-10',meses:24,on:false,itens:items(URB)}
+  ],
+  apts:[
+    {id:'a0',nome:'Imóvel de R$ 657 mil',onde:'A definir',valor:657000,on:true},
+    {id:'a1',nome:'Urban 1016',onde:'Urban',valor:591000,on:false},
+    {id:'a2',nome:'Urban 1212',onde:'Urban',valor:481000,on:false},
+    {id:'a3',nome:'Urban 1103',onde:'Urban',valor:324000,on:false},
+    {id:'a4',nome:'Urban 403',onde:'Urban',valor:289000,on:false}
+  ],
+  p:{pct:100,fd:0,ad:0,band:7,vari:20,perfil:'linear'},
+  checks:{},custom:[],notes:''
+});
+
+let S=DEF();
+try{const raw=localStorage.getItem(LS);if(raw){const x=JSON.parse(raw);if(x&&x.v===2)S=x}}catch(e){}
+
+/* ---------- cálculo ---------- */
+const rowTotal=r=>r.total!=null?r.total:(r.qtd||0)*(r.unit||0);
+function calc(){
+  const p=S.p;
+  const ob=S.obras.map(o=>({o,tot:sum(o.itens.map(rowTotal)),qtd:sum(o.itens.map(r=>r.qtd)),kg:sum(o.itens.map(r=>(r.qtd||0)*(r.kg||0)))}));
+  const inc=ob.filter(x=>x.o.on);
+  const F0=sum(inc.map(x=>x.tot)),F=F0*(1-p.fd/100);
+  const A=sum(S.apts.filter(a=>a.on).map(a=>a.valor)),Ae=A*(1-p.ad/100);
+  const alvo=F*p.pct/100;
+  return{ob,inc,F0,F,A,Ae,alvo,cash:F-Ae,falta:alvo-Ae,nApts:S.apts.filter(a=>a.on).length};
+}
+const addM=(start,i)=>{const[y,m]=start.split('-').map(Number);const k=y*12+(m-1)+i;return k};
+const mLabel=k=>MES[k%12]+'/'+String(Math.floor(k/12)).slice(2);
+const validM=s=>/^\d{4}-(0[1-9]|1[0-2])$/.test(s||'');
+function weights(n,perfil){const w=[];for(let i=0;i<n;i++)w.push(perfil==='inicio'?n-i:1);const s=sum(w);return w.map(x=>x/s)}
+function schedule(C){
+  return C.inc.filter(x=>validM(x.o.inicio)&&x.o.meses>=1).map(x=>{
+    const n=Math.round(x.o.meses),w=weights(n,S.p.perfil),base=addM(x.o.inicio,0),tot=x.tot*(1-S.p.fd/100);
+    return{x,n,base,vals:w.map(v=>v*tot),tot};
+  });
+}
+
+/* ---------- caminhos e parsing ---------- */
+function getP(path){return path.split('.').reduce((o,k)=>o==null?o:o[k],S)}
+function setP(path,val){const ks=path.split('.');let o=S;for(let i=0;i<ks.length-1;i++){if(o[ks[i]]==null)o[ks[i]]={};o=o[ks[i]]}o[ks[ks.length-1]]=val}
+function parseNum(s,dotDec){
+  s=String(s).replace(/[^\d,.\-]/g,'');if(s===''||s==='-')return null;
+  if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');
+  else if(!dotDec){if((s.match(/\./g)||[]).length>1)s=s.replace(/\./g,'');else if(/^-?\d{1,3}\.\d{3}$/.test(s))s=s.replace('.','')}
+  const n=Number(s);return isFinite(n)?n:null;
+}
+
+/* ---------- salvar ---------- */
+let ref=null,tm=null,writing=false,dirty=false,dbTimer=null;
+function setStatus(t,c){const el=$('status');el.textContent=t;el.className='tag'+(c?' '+c:'')}
+function save(){
+  try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}
+  setStatus('Salvando…');clearTimeout(tm);tm=setTimeout(flush,700);
+}
+async function flush(){
+  tm=null;
+  if(!ref){setStatus('Salvo neste navegador','ok');return}
+  if(writing){dirty=true;return}
+  writing=true;
+  try{await ref.set({json:JSON.stringify(S),savedAt:Date.now()});setStatus('Salvo','ok')}
+  catch(e){setStatus('Salvo só neste navegador','bad')}
+  writing=false;
+  if(dirty){dirty=false;flush()}
+}
+function typing(){const a=document.activeElement;return a&&(a.matches('input,textarea,select'))}
+
+/* ---------- renderização: estrutura ---------- */
+function ferragemHTML(){
+  return S.obras.map((o,i)=>`
+  <div class="panel">
+    <div class="obra-head">
+      <label class="fld grow"><span class="label">Obra</span><input class="in l" data-k="obras.${i}.nome" data-t="s" data-struct="1"></label>
+      <label class="fld"><span class="label">Início (AAAA-MM)</span><input class="in l" data-k="obras.${i}.inicio" data-t="m" placeholder="2028-05"></label>
+      <label class="fld"><span class="label">Meses de obra</span><input class="in" inputmode="numeric" data-k="obras.${i}.meses" data-t="n" data-d="0"></label>
+      <label class="chkl"><input type="checkbox" data-k="obras.${i}.on" data-t="b"> Na permuta</label>
+      <button class="btn danger" data-act="delObra:${i}" data-confirm>Remover obra</button>
+    </div>
+    <div class="scroll"><table class="ed">
+      <thead><tr><th>Bitola</th><th class="num">Barras</th><th class="num">Unitário (R$)</th><th class="num">kg/barra</th><th class="num">Total (R$)</th><th></th></tr></thead>
+      <tbody>${o.itens.map((r,j)=>`<tr>
+        <td><input class="in l" data-k="obras.${i}.itens.${j}.nome" data-t="s"></td>
+        <td><input class="in" inputmode="decimal" data-k="obras.${i}.itens.${j}.qtd" data-t="n" data-d="0"></td>
+        <td><input class="in" inputmode="decimal" data-k="obras.${i}.itens.${j}.unit" data-t="n" data-d="2" data-f="2"></td>
+        <td><input class="in" inputmode="decimal" data-k="obras.${i}.itens.${j}.kg" data-t="n" data-d="3" data-f="0" data-dd="1"></td>
+        <td><input class="in" inputmode="decimal" data-k="obras.${i}.itens.${j}.total" data-t="nn" data-d="2" data-f="2" data-fb="${i}.${j}"></td>
+        <td><button class="x" data-act="delRow:${i}:${j}" aria-label="Remover linha">×</button></td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total</td><td class="num" data-o="oq:${i}"></td><td></td><td class="num" data-o="okg:${i}"></td><td class="num" data-o="ot:${i}"></td><td></td></tr></tfoot>
+    </table></div>
+    <div class="row-actions"><button class="btn ghost" data-act="addRow:${i}">+ Linha</button><button class="btn ghost" data-act="recalc:${i}">Recalcular totais</button></div>
+  </div>`).join('');
+}
+function imoveisHTML(){
+  const ondes=['A definir',...S.obras.map(o=>o.nome)];
+  return S.apts.map((a,j)=>{
+    const opts=ondes.includes(a.onde)?ondes:[...ondes,a.onde];
+    return `<tr class="apts-in">
+      <td><input class="in l" data-k="apts.${j}.nome" data-t="s"></td>
+      <td><select class="in l" data-k="apts.${j}.onde" data-t="s">${opts.map(x=>`<option>${esc(x)}</option>`).join('')}</select></td>
+      <td><input class="in" inputmode="decimal" data-k="apts.${j}.valor" data-t="n" data-d="2" data-f="2"></td>
+      <td style="text-align:center"><input type="checkbox" data-k="apts.${j}.on" data-t="b" aria-label="Na permuta"></td>
+      <td><button class="x" data-act="delApt:${j}" aria-label="Remover imóvel">×</button></td></tr>`}).join('');
+}
+function ctlHTML(){
+  const c=(label,key,min,max,step,suf,dd)=>`<div class="ctl"><div class="row"><label class="label" for="c-${key}">${label}</label><span style="display:flex;gap:6px;align-items:center"><input class="in" id="c-${key}" inputmode="decimal" data-k="p.${key}" data-t="n" data-d="1" data-f="0" data-dd="1"><span class="muted">${suf}</span></span></div><input type="range" min="${min}" max="${max}" step="${step}" data-k="p.${key}" data-t="n" data-d="1" data-f="0" aria-label="${label}"></div>`;
+  return c('Parte paga em imóveis','pct',0,100,1,'%')+c('Desconto sobre a tabela do ferro','fd',0,25,0.5,'%')+c('Desconto à vista nos imóveis','ad',0,30,0.5,'%')+c('Faixa de variação do aço','band',0,20,0.5,'%');
+}
+const TOPICS=[
+ ['Preço do ferro',[
+  ['Fechamos o ferro no preço de hoje com faixa de variação','Dentro da faixa vale o preço de hoje. Passou da faixa, o lote entregue naquela data acompanha a variação inteira (gatilho), para cima ou para baixo.'],
+  ['Qual tabela mede a variação do aço e qual é a data-base?','Por exemplo a média de 3 distribuidores, medida na entrega de cada lote.'],
+  ['Depois que a faixa dispara, o preço segue o mercado ou um índice?','A faixa recomeça a partir do novo preço.'],
+  ['Como se acerta a diferença quando passa da faixa?','Abatimento no valor do imóvel, crédito ou dinheiro.']]],
+ ['Imóveis',[
+  ['Os imóveis ficam travados no valor de hoje e reservados no contrato?','Sem correção até a entrega. Se ele recusar, os dois lados sobem pelo mesmo índice, por exemplo INCC.'],
+  ['O valor é de tabela cheia. Qual o desconto à vista?','Peça por escrito, com data. Use a aba Simulador para ver o efeito.'],
+  ['Em que obra fica o imóvel e qual o prazo de entrega?','Se for no próprio Divino, a chave sai perto do fim do ferro. No Urban, só depois de 2030.'],
+  ['Metragem, andar, posição e vagas incluídas','Com isso você calcula o valor por m² e compara com o mercado.'],
+  ['Como o imóvel passa para o seu nome?','Escritura, matrícula individualizada, e quem paga ITBI e registro.']]],
+ ['Entrega do ferro',[
+  ['Em que mês a obra começa e qual é o cronograma de entregas?','Fundação, estrutura e lajes pedem lotes diferentes.'],
+  ['Barra reta ou cortado e dobrado?','Muda preço, prazo e responsabilidade por perda.'],
+  ['Quem paga frete e descarga, e onde o material fica guardado?','Defina quem responde por furto e perda no canteiro.'],
+  ['E se o projeto estrutural mudar as bitolas?','Quantidade fechada ou ajuste pela medição real, com tolerância (por exemplo 5%).']]],
+ ['Garantias e risco',[
+  ['O que acontece se a obra não começar ou atrasar?','Rescisão, devolução do que foi entregue com correção, e multa.'],
+  ['Como você fica protegido entre entregar o ferro e receber a chave?','Promessa de compra e venda registrada na matrícula, hipoteca ou alienação fiduciária. Um advogado indica a melhor.'],
+  ['Registro de incorporação e patrimônio de afetação','Peça matrícula do terreno sem ônus e certidões negativas da construtora.'],
+  ['Dá para liberar o imóvel por etapas, conforme o ferro entregue?','Reduz a exposição a cada lote.']]],
+ ['Contrato e impostos',[
+  ['O contrato traz unidades, valores, reserva, regra do ferro, prazos, multas e foro?','Um advogado revisa antes de assinar.'],
+  ['Como a nota fiscal do ferro e o recebimento dos imóveis são tributados?','Fale com seu contador antes.'],
+  ['Mande uma mensagem resumindo o que foi combinado hoje','Já serve de base para o contrato.']]]
+];
+function topicsHTML(){
+  return TOPICS.map((t,ti)=>`<div class="topic"><h2>${t[0]}</h2><ul class="chk">${t[1].map((q,qi)=>`<li><label><input type="checkbox" data-k="checks.c${ti}_${qi}" data-t="b"><span>${q[0]}<small>${q[1]}</small></span></label></li>`).join('')}</ul></div>`).join('');
+}
+function customHTML(){
+  $('custom').innerHTML=S.custom.map((q,j)=>`<li><label><input type="checkbox" data-k="checks.x${q.id}" data-t="b"><span>${esc(q.t)}</span></label><button class="x" data-act="delCustom:${j}" aria-label="Remover pergunta">×</button></li>`).join('')||'<li class="muted" style="padding:12px 2px">Nenhuma ainda.</li>';
+}
+function renderStructure(){
+  $('f-obras').innerHTML=ferragemHTML();
+  $('i-rows').innerHTML=imoveisHTML();
+  $('s-ctl').innerHTML=ctlHTML();
+  $('topics').innerHTML=topicsHTML();
+  customHTML();
+  syncAll();refresh();
+}
+
+/* ---------- sincroniza campos com o estado ---------- */
+function fmtIn(v,el){
+  const d=+(el.dataset.d||0),f=el.dataset.f!=null?+el.dataset.f:d;
+  return nf(d,f).format(v);
+}
+function syncEl(el){
+  const path=el.dataset.k;let v=getP(path);
+  if(el.type==='checkbox'){el.checked=!!v;return}
+  const t=el.dataset.t;
+  if(t==='n'||t==='nn'){
+    el.classList.remove('ov');
+    if(t==='nn'){
+      if(v==null){const[i,j]=el.dataset.fb.split('.').map(Number);v=rowTotal({...S.obras[i].itens[j],total:null})}
+      else el.classList.add('ov');
+    }
+    el.value=el.type==='range'?String(v):fmtIn(v||0,el);
+  }else el.value=v==null?'':v;
+}
+function syncAll(){document.querySelectorAll('[data-k]').forEach(el=>{if(el!==document.activeElement)syncEl(el)})}
+
+/* ---------- saídas calculadas ---------- */
+const pill=on=>`<span class="pill${on?' on':''}">${on?'Na permuta':'Fora'}</span>`;
+function refresh(){
+  syncAll();
+  const C=calc(),p=S.p;
+  $('h-title').textContent=`Permuta Ferragem ${N0.format(p.pct)}/${N0.format(100-p.pct)}`;
+  $('h-sub').textContent=C.inc.map(x=>x.o.nome).join(' + ')||'Nenhuma obra na permuta';
+
+  // KPIs
+  const dif=C.cash;
+  const k3=Math.abs(dif)<0.5?['Fecha zerado',brl(0),'Imóveis e ferro com o mesmo valor','']:dif>0?['Dinheiro a receber',brl(dif),'Ferro menos imóveis','get']:['Você paga ao construtor',brl(-dif),'Os imóveis valem mais que o ferro','pay'];
+  $('r-kpis').innerHTML=`
+    <div class="kpi main"><div class="label">Ferro na permuta</div><div class="v num">${brl(C.F)}</div><div class="s">${esc(C.inc.map(x=>x.o.nome).join(' + ')||'Nenhuma obra')}${p.fd?` · com ${P1.format(p.fd)}% de desconto`:''}</div></div>
+    <div class="kpi"><div class="label">Imóveis</div><div class="v num">${brl(C.Ae)}</div><div class="s">${C.nApts} imóvel(is)${p.ad?` · com ${P1.format(p.ad)}% de desconto à vista`:''}</div></div>
+    <div class="kpi ${k3[3]}"><div class="label">${k3[0]}</div><div class="v num">${k3[1]}</div><div class="s">${k3[2]}</div></div>`;
+
+  // cobertura
+  const cov=C.alvo>0?C.Ae/C.alvo:0;
+  let msg;
+  if(C.alvo<=0)msg='Inclua ao menos uma obra para ver a cobertura.';
+  else if(C.falta>0.5)msg=`Faltam ${brl(C.falta)} em imóveis para chegar a ${N0.format(p.pct)}% do ferro.`;
+  else if(C.falta<-0.5){const d=C.A>0?(1-C.alvo/C.A)*100:0;msg=`Os imóveis passam ${brl(-C.falta)} da meta. Para igualar, o desconto necessário nos imóveis é de ${N1.format(d)}%.`}
+  else msg='Imóveis e meta com o mesmo valor.';
+  $('r-split').innerHTML=`<div class="split"><div style="width:${Math.min(cov*100,100)}%">${N0.format(Math.round(cov*100))}% da meta</div></div><div class="muted">Meta de permuta: ${N0.format(p.pct)}% de ${brl(C.F)} = ${brl(C.alvo)}. ${msg}</div>`;
+
+  // obras / imóveis
+  const sch=schedule(C);
+  const media=o=>{const s=sch.find(z=>z.x.o===o);return s?s.tot/s.n:null};
+  $('r-obras').innerHTML=`<table><thead><tr><th>Obra</th><th>Período</th><th class="num">Ferro</th><th class="num">Média/mês</th><th></th></tr></thead><tbody>${C.ob.map(x=>{
+    const ok=validM(x.o.inicio)&&x.o.meses>=1;
+    const per=ok?`${mLabel(addM(x.o.inicio,0))} a ${mLabel(addM(x.o.inicio,Math.round(x.o.meses)-1))}`:'–';
+    const m=ok?x.tot*(x.o.on?1-p.fd/100:1)/Math.round(x.o.meses):null;
+    return `<tr class="${x.o.on?'':'off'}"><td>${esc(x.o.nome)}</td><td>${per}</td><td class="num">${brl(x.tot)}</td><td class="num">${m==null?'–':brl(m)}</td><td>${pill(x.o.on)}</td></tr>`}).join('')}</tbody></table>`;
+  $('r-apts').innerHTML=`<table><thead><tr><th>Imóvel</th><th>Onde</th><th class="num">Valor</th><th></th></tr></thead><tbody>${S.apts.map(a=>`<tr class="${a.on?'':'off'}"><td>${esc(a.nome)}</td><td>${esc(a.onde)}</td><td class="num">${brl(a.valor)}</td><td>${pill(a.on)}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Nenhum imóvel.</td></tr>'}</tbody></table>`;
+
+  // bitolas
+  const map=new Map();C.inc.forEach(x=>x.o.itens.forEach(r=>{const k=r.nome.trim()||'(sem nome)';map.set(k,(map.get(k)||0)+rowTotal(r))}));
+  const tot=sum([...map.values()]),mx=Math.max(1,...map.values());
+  $('r-bars').innerHTML=[...map].map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="t"><i style="width:${v/mx*100}%"></i></div><b>${tot?N1.format(v/tot*100):0}%</b></div>`).join('')||'<span class="muted">Sem dados.</span>';
+
+  // alertas
+  const al=[];
+  C.inc.forEach(x=>x.o.itens.forEach(r=>{if(r.total!=null){const c=(r.qtd||0)*(r.unit||0);if(Math.abs(r.total-c)>0.5)al.push(`${esc(x.o.nome)} ${esc(r.nome)}: total ${brl(r.total)}, barras × unitário ${brl(c)}`)}}));
+  let h='';
+  if(al.length)h+=`<div class="note" style="margin-bottom:12px"><b>Totais que não batem com barras × unitário.</b> Valem os totais digitados (campos destacados na aba Ferragem). No PDF original isso acontece no Divino, por quantidades arredondadas.<div class="muted" style="margin-top:6px">${al.join('<br>')}</div></div>`;
+  if(C.alvo>0&&C.falta<-0.5&&p.pct>=100)h+=`<div class="note"><b>Imóveis acima do ferro.</b> Hoje os imóveis valem ${N1.format((C.A/C.F0-1)*100)}% mais que o ferro. Peça desconto à vista, entregue mais ferro ou pague a diferença.</div>`;
+  $('r-alerts').innerHTML=h;
+
+  // outputs genéricos
+  document.querySelectorAll('[data-o]').forEach(el=>{
+    const[k,a]=el.dataset.o.split(':');let t='';
+    if(k==='aptSum')t=brl(C.A);
+    else{const x=C.ob[+a];if(x){if(k==='ot')t=brl(x.tot);if(k==='oq')t=N0.format(x.qtd);if(k==='okg')t=N1.format(x.kg/1000)+' t'}}
+    el.textContent=t;
+  });
+
+  // cronograma
+  const ck=sch.map(z=>`<div class="kpi"><div class="label">${esc(z.x.o.nome)}</div><div class="v num">${brl(z.tot/z.n)}</div><div class="s">por mês em média, ${z.n} meses · ${mLabel(z.base)} a ${mLabel(z.base+z.n-1)}<br>Pico: ${brl(Math.max(...z.vals))}</div></div>`);
+  $('c-kpis').innerHTML=ck.join('')||'<div class="note">Inclua uma obra com início (AAAA-MM) e meses na aba Ferragem.</div>';
+  if(sch.length){
+    const lo=Math.min(...sch.map(z=>z.base)),hi=Math.max(...sch.map(z=>z.base+z.n-1));
+    let acc=0,rows='';
+    for(let k=lo;k<=hi;k++){
+      const cells=sch.map(z=>{const i=k-z.base;return i>=0&&i<z.n?z.vals[i]:null});
+      const t=sum(cells.map(v=>v||0));acc+=t;
+      rows+=`<tr><td>${mLabel(k)}</td>${cells.map(v=>`<td class="num">${v==null?'–':brl(v)}</td>`).join('')}<td class="num">${brl(t)}</td><td class="num">${brl(acc)}</td></tr>`;
+    }
+    $('c-table').innerHTML=`<table><thead><tr><th>Mês</th>${sch.map(z=>`<th class="num">${esc(z.x.o.nome)}</th>`).join('')}<th class="num">Total</th><th class="num">Acumulado</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }else $('c-table').innerHTML='';
+
+  // simulador
+  const row=(l,v,c='')=>`<div class="r"><span>${l}</span><span class="${c}">${v}</span></div>`;
+  $('s-res').innerHTML=row('Ferro de hoje (obras na permuta)',brl(C.F0))+(p.fd?row('Ferro com desconto',brl(C.F)):'')+row(`Meta de permuta (${N0.format(p.pct)}%)`,brl(C.alvo))+row('Imóveis a tabela',brl(C.A))+row('Imóveis com desconto à vista',brl(C.Ae))+
+    row(C.falta>0.5?'Falta cobrir em imóveis':'Sobra em imóveis',brl(Math.abs(C.falta)),C.falta>0.5?'pos':'neg')+
+    `<div class="r big"><span>${dif>=0?'Dinheiro a receber':'Você paga'}</span><span>${brl(Math.abs(dif))}</span></div>`;
+  const c=$('s-cov');c.style.width=Math.min(cov*100,100)+'%';c.textContent=N0.format(Math.round(cov*100))+'% coberto';
+  const v=p.vari,a=Math.abs(v),b=p.band;
+  const adj=m=>m==='trava'||a<=b?0:m==='gatilho'?v:Math.sign(v)*(a-b);
+  const merc=C.F*(1+v/100);
+  const lin=(n,m,desc)=>{const rec=C.F*(1+adj(m)/100),d=rec-merc;return `<tr><td>${n}<div class="muted">${desc}</div></td><td class="num">${brl(rec)}</td><td class="num">${brl(merc)}</td><td class="num ${d<-0.5?'pos':'neg'}">${d>=0?'+':'−'}${brl(Math.abs(d))}</td></tr>`};
+  $('s-aco').innerHTML=`<table><thead><tr><th>Regra</th><th class="num">Você recebe</th><th class="num">Ferro a preço de mercado</th><th class="num">Diferença para você</th></tr></thead><tbody>
+    ${lin('Preço travado','trava','Nada muda até a entrega')}
+    ${lin(`Gatilho de ${P1.format(b)}%`,'gatilho','Passou da faixa, acompanha a variação inteira')}
+    ${lin(`Franquia de ${P1.format(b)}%`,'franquia','Só o que passa da faixa é repassado')}
+    </tbody></table><p class="muted" style="margin:10px 0 0">Com o aço ${v>=0?'subindo':'caindo'} ${P1.format(Math.abs(v))}%. Diferença negativa em vermelho é o que você deixa de ganhar em relação ao mercado.</p>`;
+
+  // roteiro: frases
+  const say=t=>`<div class="say">${t}</div>`;
+  let c3;
+  if(C.alvo>0&&C.falta<-0.5){const d=(1-C.alvo/C.A)*100;c3=`<div class="card"><h3>Imóvel acima do ferro</h3><p>Os imóveis passam do ferro. Peça desconto para igualar.</p>${say(`“O ferro soma ${brl(C.F)} e o imóvel está em ${brl(C.A)}. Como o pagamento é à vista e ${N0.format(p.pct)}% em permuta, consigo fechar com ${N1.format(d)}% de desconto no imóvel para igualar os valores?”`)}</div>`}
+  else if(C.falta>0.5&&C.alvo>0)c3=`<div class="card"><h3>Imóvel abaixo do ferro</h3><p>Os imóveis não cobrem a meta. Decida entre mais imóveis ou dinheiro.</p>${say(`“Os imóveis cobrem ${N0.format(Math.round(cov*100))}% do ferro. Faltam ${brl(C.falta)}: acertamos em dinheiro, em outra unidade ou em desconto no ferro?”`)}</div>`;
+  else c3=`<div class="card"><h3>Valores fechados</h3><p>Imóveis e ferro estão com o mesmo valor. Peça o contrato por escrito.</p>${say('“Podemos colocar por escrito: unidades, valores, reserva e a regra do ferro?”')}</div>`;
+  $('z-pos').innerHTML=`
+    <div class="card"><h3>Se ele quiser travar o ferro</h3><p>Ofereça o preço de hoje dentro de uma faixa, com gatilho.</p>${say(`“Consigo fechar o ferro no preço de hoje. Só preciso de uma proteção: se o aço variar mais de ${P1.format(b)}% até a entrega do lote, o preço daquele lote acompanha a variação. Dentro de ${P1.format(b)}%, vale o preço de hoje. E vale para os dois lados.”`)}</div>
+    <div class="card"><h3>Imóveis travados</h3><p>Combinado: travados no valor de hoje. Confirme e peça por escrito.</p>${say('“Então ficam combinados os imóveis travados no valor de hoje, reservados para essa permuta e sem correção até a entrega. Podemos colocar isso no contrato?”')}</div>
+    ${c3}`;
+}
+
+/* ---------- eventos ---------- */
+function apply(el){
+  const t=el.dataset.t,path=el.dataset.k;
+  if(t==='b')setP(path,el.checked);
+  else if(t==='s')setP(path,el.value);
+  else if(t==='m'){if(validM(el.value.trim()))setP(path,el.value.trim());else return}
+  else{
+    const n=parseNum(el.value,!!el.dataset.dd);
+    if(n==null){if(t==='nn')setP(path,null);else return}
+    else setP(path,n);
+    const last=path.split('.').pop();
+    if(last==='qtd'||last==='unit'){setP(path.replace(/\.(qtd|unit)$/,'.total'),null);const tot=document.querySelector(`[data-k="${path.replace(/\.(qtd|unit)$/,'.total')}"]`);if(tot)tot.classList.remove('ov')}
+  }
+  save();refresh();
+}
+document.addEventListener('input',e=>{const el=e.target.closest('[data-k]');if(el)apply(el)});
+document.addEventListener('change',e=>{
+  const el=e.target.closest('[data-k]');if(!el)return;
+  if(el.type!=='checkbox')apply(el);
+  if(el.dataset.struct)renderStructure();else syncEl(el);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='newq'){e.preventDefault();act('addCustom')}});
+
+const armed=new Map();
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  if(b.dataset.confirm!=null&&!armed.has(b)){
+    const old=b.textContent;b.textContent='Clique de novo para confirmar';b.classList.add('arm');
+    armed.set(b,setTimeout(()=>{b.textContent=old;b.classList.remove('arm');armed.delete(b)},3500));return;
+  }
+  if(armed.has(b)){clearTimeout(armed.get(b));armed.delete(b)}
+  act(b.dataset.act);
+});
+function act(a){
+  const[k,x,y]=a.split(':'),i=+x,j=+y;
+  if(k==='addObra')S.obras.push({id:uid(),nome:'Nova obra',inicio:'2030-01',meses:12,on:true,itens:BIT.map((b,n)=>({nome:b[0],qtd:0,unit:UN[n],kg:b[1],total:null}))});
+  else if(k==='delObra')S.obras.splice(i,1);
+  else if(k==='addRow')S.obras[i].itens.push({nome:'Nova bitola',qtd:0,unit:0,kg:0,total:null});
+  else if(k==='delRow')S.obras[i].itens.splice(j,1);
+  else if(k==='recalc')S.obras[i].itens.forEach(r=>r.total=null);
+  else if(k==='addApt')S.apts.push({id:uid(),nome:'Novo imóvel',onde:'A definir',valor:0,on:true});
+  else if(k==='delApt')S.apts.splice(i,1);
+  else if(k==='addCustom'){const el=$('newq'),t=el.value.trim();if(!t)return;S.custom.push({id:uid(),t});el.value=''}
+  else if(k==='delCustom')S.custom.splice(i,1);
+  else if(k==='reset')S=DEF();
+  else if(k==='copy'){copySummary();return}
+  save();renderStructure();
+}
+function summary(){
+  const C=calc(),p=S.p,L=[];
+  L.push(`Permuta Ferragem ${N0.format(p.pct)}/${N0.format(100-p.pct)}`);
+  C.inc.forEach(x=>L.push(`${x.o.nome}: ferro ${brl(x.tot)}`));
+  if(p.fd)L.push(`Desconto no ferro: ${P1.format(p.fd)}% → ${brl(C.F)}`);
+  L.push(`Imóveis (${C.nApts}): ${brl(C.A)}${p.ad?`, com desconto à vista ${brl(C.Ae)}`:''}`);
+  S.apts.filter(a=>a.on).forEach(a=>L.push(`  • ${a.nome} (${a.onde}): ${brl(a.valor)}`));
+  L.push(C.cash>=0.5?`Dinheiro a receber: ${brl(C.cash)}`:C.cash<=-0.5?`Diferença a pagar ao construtor: ${brl(-C.cash)}`:'Fecha zerado');
+  L.push(`Ferro: preço de hoje, gatilho de ${P1.format(p.band)}% de variação. Imóveis travados no valor de hoje.`);
+  return L.join('\n');
+}
+async function copySummary(){
+  const t=summary(),box=$('copybox');
+  try{await navigator.clipboard.writeText(t);setStatus('Resumo copiado','ok');setTimeout(()=>setStatus('Salvo','ok'),1800);box.hidden=true}
+  catch(e){box.hidden=false;box.value=t;box.rows=Math.min(12,t.split('\n').length+1);box.focus();box.select()}
+}
+
+/* ---------- abas ---------- */
+const tabs=[...document.querySelectorAll('nav button')];
+function show(id){
+  if(!document.getElementById(id))id='resumo';
+  tabs.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===id)));
+  document.querySelectorAll('section').forEach(s=>s.hidden=s.id!==id);
+}
+tabs.forEach(b=>b.addEventListener('click',()=>{show(b.dataset.tab);try{history.replaceState(null,'','#'+b.dataset.tab)}catch(e){}}));
+
+/* ---------- início ---------- */
+renderStructure();
+show((location.hash||'').slice(1)||'resumo');
+setStatus('Salvo neste navegador','ok');
+
+(async()=>{
+  let d=null;
+  try{d=await claude.use('db')}catch(e){}
+  if(!d)return;
+  ref=d.doc('deal/state');
+  dbTimer=setTimeout(()=>setStatus('Sem conexão com o salvamento. Salvo neste navegador.','bad'),10000);
+  ref.onSnapshot(snap=>{
+    if(!snap.metadata.fromCache)clearTimeout(dbTimer);
+    if(!snap.exists){setStatus('Salvo','ok');if(!snap.metadata.fromCache)save();return}
+    const j=snap.data().json;
+    setStatus('Salvo','ok');
+    if(!j||j===JSON.stringify(S)||snap.metadata.hasPendingWrites||tm||writing||typing())return;
+    try{const x=JSON.parse(j);if(x&&x.v===2){S=x;try{localStorage.setItem(LS,j)}catch(e){}renderStructure()}}catch(e){}
+  },()=>setStatus('Salvo só neste navegador','bad'));
+})();
+</script>
+
+</body></html>
