@@ -499,7 +499,7 @@ function refresh(){
       const cells=sch.map(z=>{const i=k-z.base;return i>=0&&i<z.n?z.vals[i]:null});
       const t=sum(cells.map(v=>v||0));acc+=t;
       const dn=t*(1-pm);
-      rows+=`<tr><td>${mLabel(k)}</td>${cells.map(v=>`<td class="num">${v==null?'–':brl(v)}</td>`).join('')}<td class="num">${brl(t)}</td><td class="num">${N1.format(pm*100)}%</td><td class="num ${dn<-0.5?'neg':''}">${dn<-0.5?'−':''}${brl(Math.abs(dn))}</td><td class="num">${brl(acc)}</td></tr>`;
+      rows+=`<tr><td>${mLabel(k)}</td>${cells.map(v=>`<td class="num">${v==null?'–':brl(v)}</td>`).join('')}<td class="num">${brl(t)}</td><td class="num">${N1.format(pm*100)}%</td><td class="num ${dn<-0.5?'pos':''}">${dn<-0.5?'−':''}${brl(Math.abs(dn))}</td><td class="num">${brl(acc)}</td></tr>`;
     }
     $('c-table').innerHTML=`<table><thead><tr><th>Mês</th>${sch.map(z=>`<th class="num">${esc(z.x.o.nome)}</th>`).join('')}<th class="num">Total</th><th class="num">% em permuta</th><th class="num">${C.cash<-0.5?'Você paga':'Construtor paga'}</th><th class="num">Acumulado</th></tr></thead><tbody>${rows}</tbody></table><p class="muted" style="margin:10px 0 0">Segue a aba Simulador: ${N1.format(pm*100)}% do ferro é pago em imóveis e o restante, ${brl(C.cash)}, em dinheiro, dividido na mesma proporção do ferro de cada mês.${C.cash<-0.5?' Valores em vermelho: os imóveis passam do ferro e a diferença sai do seu bolso.':''}</p>`;
   }else $('c-table').innerHTML='';
