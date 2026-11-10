@@ -494,7 +494,7 @@ function refresh(){
   if(sch.length){
     const lo=Math.min(...sch.map(z=>z.base)),hi=Math.max(...sch.map(z=>z.base+z.n-1));
     let acc=0,rows='',tp=0,tc=0,tt=0;
-    const pm=C.F>0?C.Ae/C.F:0; // imóveis marcados ÷ ferro: mesmos totais do Simulador
+    const pm=Math.min(Math.max(p.pct,0),100)/100; // % de permuta digitado no Simulador
     const cell=v=>`<td class="num ${v<-0.5?'pos':''}">${v<-0.5?'−':''}${brl(Math.abs(v))}</td>`;
     for(let k=lo;k<=hi;k++){
       const cells=sch.map(z=>{const i=k-z.base;return i>=0&&i<z.n?z.vals[i]:null});
@@ -502,7 +502,7 @@ function refresh(){
       rows+=`<tr><td>${mLabel(k)}</td>${cells.map(v=>`<td class="num">${v==null?'–':brl(v)}</td>`).join('')}<td class="num">${brl(t)}</td><td class="num">${N1.format(pm*100)}%</td>${cell(t*pm)}${cell(t*(1-pm))}<td class="num">${brl(acc)}</td></tr>`;
     }
     const foot=`<tr style="font-weight:600"><td>Total</td>${sch.map(z=>`<td class="num">${brl(z.tot)}</td>`).join('')}<td class="num">${brl(tt)}</td><td class="num">${N1.format(pm*100)}%</td>${cell(tp)}${cell(tc)}<td></td></tr>`;
-    $('c-table').innerHTML=`<table><thead><tr><th>Mês</th>${sch.map(z=>`<th class="num">${esc(z.x.o.nome)}</th>`).join('')}<th class="num">Ferro do mês</th><th class="num">% em permuta</th><th class="num">Em permuta</th><th class="num">${C.cash<-0.5?'Você paga':'Construtor paga'}</th><th class="num">Acumulado</th></tr></thead><tbody>${rows}${foot}</tbody></table><p class="muted" style="margin:10px 0 0">Bate com o Simulador: ferro ${brl(C.F)}, imóveis ${brl(C.Ae)} (${N1.format(pm*100)}% do ferro) e ${brl(Math.abs(C.cash))} ${C.cash<0?'a pagar por você':'em dinheiro do construtor'}, dividido na proporção do ferro de cada mês.${Math.abs(pm*100-p.pct)>0.05?` A meta digitada é ${N0.format(p.pct)}/${N0.format(100-p.pct)}, mas os imóveis marcados cobrem ${N1.format(pm*100)}%. Ajuste os imóveis ou a meta no Simulador.`:''}</p>`;
+    $('c-table').innerHTML=`<table><thead><tr><th>Mês</th>${sch.map(z=>`<th class="num">${esc(z.x.o.nome)}</th>`).join('')}<th class="num">Ferro do mês</th><th class="num">% em permuta</th><th class="num">Em permuta</th><th class="num">Construtor paga</th><th class="num">Acumulado</th></tr></thead><tbody>${rows}${foot}</tbody></table><p class="muted" style="margin:10px 0 0">Divisão ${N0.format(p.pct)}/${N0.format(100-p.pct)} do Simulador: ${brl(tp)} em permuta e ${brl(tc)} em dinheiro do construtor, na proporção do ferro de cada mês.${Math.abs(C.Ae-tp)>0.5?` Os imóveis marcados somam ${brl(C.Ae)}, ${C.Ae>tp?'acima':'abaixo'} da meta de permuta em ${brl(Math.abs(C.Ae-tp))}.`:''}</p>`;
   }else $('c-table').innerHTML='';
 
   // simulador
